@@ -1,0 +1,15 @@
+{
+  "name": "cssh",
+  "version": "1.0.0",
+  "description": "A js aproach to cluster sshing",
+  "main": "index.js",
+  "dependencies": {
+    "ssh2": "^0.8.4"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Micah Henney",
+  "license": "ISC"
+}
