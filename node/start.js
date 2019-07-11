@@ -1,13 +1,13 @@
 var Client = require('ssh2').Client;
 var child_process = require('child_process');
 var time = process.hrtime();
-const conns = [
-  {
-    host: '192.168.0.112',
-    port: 22,
-    username: 'main',
-    password: 'ubuntu-main'
-  }
+var conns = [
+  // {
+  //   host: '192.168.0.112',
+  //   port: 22,
+  //   username: 'main',
+  //   password: 'ubuntu-main'
+  // }
   // },
   // {
   //   host: '192.168.0.108',
@@ -16,6 +16,15 @@ const conns = [
   //   password: 'ubuntu-main'
   // }
 ];
+process.argv.forEach((e, i) => {
+  if(i < 2) return;
+  conns.push({
+    host: e,
+    port: 22,
+    username: 'main',
+    password: 'ubuntu-main'
+  });
+});
 var closed = 0;
 var server = child_process.fork('./public/index.js');
 var tasks;
@@ -30,7 +39,6 @@ for(let i = 0; i < conns.length; i++){
         console.log('Stream :: close :: code: ' + code + ', signal: ' + signal);
         //console.log(conn);
         conn.end();
-        closed++;
         if(++closed >= conns.length){
           time = process.hrtime(time);
           console.log(`Time to execute ${tasks.length} items over ${conns.length} connection${conns.length > 1 ? "s" : ""}: ${time[0]}.${time[1]}s`);

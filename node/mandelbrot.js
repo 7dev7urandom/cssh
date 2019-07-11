@@ -1,5 +1,5 @@
 const threshold = 5;
-const loopTimes = 70;
+const loopTimes = 50;
 const mag = 600;
 //var time = process.hrtime();
 function isMandelbrot(num1, num2, iter) {
