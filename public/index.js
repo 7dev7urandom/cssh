@@ -15,3 +15,4 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(port);
+process.send(tasks);
