@@ -1,5 +1,6 @@
 var Client = require('ssh2').Client;
 var child_process = require('child_process');
+const debugging = true;
 var time = process.hrtime();
 var conns = [
   // {
@@ -25,29 +26,41 @@ process.argv.forEach((e, i) => {
     password: 'ubuntu-main'
   });
 });
+const debug = debugging ? console.log : function() {};
 var closed = 0;
 var server = child_process.fork('./public/index.js');
-var tasks;
-server.on('message', (msg) => tasks = msg);
+var tasks = [
+  "rm /var/lib/dpkg/lock",
+  "rm /var/lib/dpkg/lock-frontend",
+  "rm /var/cache/apt/archives/lock",
+  "apt upgrade -y"
+];
+var consumeTasks = false;
+function sendToServer(data){
+  server.send(data);
+}
+server.on('message', (msg) => debug("message from index.js: " + msg));
+sendToServer({ type: "setTasks", data: tasks });
+sendToServer({ type: "setTaskRemovalType", data: consumeTasks })
 for(let i = 0; i < conns.length; i++){
   let conn = new Client();
   conn.on('ready', function() {
-    console.log('Client :: ready');
-    conn.exec('node ~/cssh/node/run.js', function(err, stream) {
+    debug('Client :: ready');
+    conn.exec(`echo "${conns[i].password}" | sudo -S node ~/cssh/node/run.js`, function(err, stream) {
       if (err) throw err;
       stream.on('close', function(code, signal) {
-        console.log('Stream :: close :: code: ' + code + ', signal: ' + signal);
-        //console.log(conn);
+        debug('Stream :: close :: code: ' + code + ', signal: ' + signal);
+        //debug(conn);
         conn.end();
         if(++closed >= conns.length){
           time = process.hrtime(time);
-          console.log(`Time to execute ${tasks.length} items over ${conns.length} connection${conns.length > 1 ? "s" : ""}: ${time[0]}.${time[1]}s`);
+          debug(`Time to execute ${tasks.length} items over ${conns.length} connection${conns.length > 1 ? "s" : ""}: ${time[0]}.${time[1]}s`);
           server.kill();
         }
       }).on('data', function(data) {
-        console.log(`STDOUT ${conns[i].host}: ` + data);
+        debug(`STDOUT ${conns[i].host}: \n` + data);
       }).stderr.on('data', function(data) {
-        console.log('STDERR: ' + data);
+        debug(`STDERR ${conns[i].host}: \n` + data);
       });
     });
   }).connect(conns[i]);
