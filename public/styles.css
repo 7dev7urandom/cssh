@@ -1,0 +1,63 @@
+textarea {
+  width: 100%;
+  height: calc(100vh - 215px);
+  position: static;
+  /* bottom: 10px; */
+  /* top: 180px; */
+  border: 1px black solid;
+  vertical-align: top;
+  resize: none;
+  background-color: rgba(130, 120, 105, 0.9);
+  color: black;
+}
+table {
+  width: 100%;
+  /* height: 100%; */
+  /* position: fixed;
+  right: 10px;
+  left: 10px; */
+}
+#go {
+  position: fixed;
+  bottom: 7%;
+  left: 5%;
+}
+.areas {
+  height: 100%;
+  overflow: hidden;
+  position: static;
+  background-image: url('assets/servers.jpg'), url('../assets/servers.jpg');
+  /* background-color: #ccc; */
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+html {
+  height: 100%;
+  overflow: hidden;
+  background-color: rgba(100, 90, 75, 1);
+}
+body {
+  height: 100%;
+}
+tbody {
+  height: 100%;
+  width: 100%;
+}
+td {
+  /* display: inline-block; */
+  /* border: solid black 1px; */
+  /* height: 100%; */
+}
+td.servers {
+  margin-left: 10px;
+}
+/* .servers {
+  margin-left: 10px;
+} */
+
+.consume {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  align: right;
+}

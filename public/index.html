@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <title>CSSH</title>
+  </head>
+  <body>
+
+    <h3>CSSH!</h3>
+    <h5>Input your data and press Go!</h5>
+    <div class="consume switch">
+      Consume Tasks when used<br><label>
+      <input id="consume" type="checkbox"><span class="lever"></span>
+    </label></div>
+    <table>
+      <tbody>
+        <tr>
+          <td>Server data:</td>
+          <td>Commands:</td>
+          <td>Output:</td>
+        </tr>
+        <tr class="areas">
+          <td class="servers">
+            <textarea name="servers" id ="servers" class="servers"></textarea>
+          </td>
+          <td>
+            <textarea placeholder="echo Hi" name="commands" id ="commands" class="commands"></textarea>
+          </td>
+          <td>
+            <textarea name="output" id ="output" class="output" disabled></textarea>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <button name="go" class="waves-effect btn" id="go">Go!</button>
+    <script type="text/javascript">
+      const {ipcRenderer} = require('electron');
+      const go = document.getElementById('go');
+      go.onclick = buttonClicked;
+      const servers = document.getElementById('servers');
+      const checkbox = document.getElementById('consume');
+      servers.value =
+      '[\n\
+  {\n\
+    "hostname": "192.168.0.112",\n\
+    "username": "main",\n\
+    "password": "ubuntu-main",\n\
+    "port": 22\n\
+  },\n\
+  {\n\
+    "hostname": "192.168.0.108",\n\
+    "username": "main",\n\
+    "password": "ubuntu-main",\n\
+    "port": 22\n\
+  }\n\
+]';
+      const commands = document.getElementById('commands');
+      const output = document.getElementById('output');
+      function buttonClicked() {
+        let conns = JSON.parse(servers.value);
+        let commandlist = commands.value.split("\n");
+        ipcRenderer.send('start', conns, commandlist, checkbox.checked);
+        output.value = "";
+      }
+      ipcRenderer.on('output', (e, input) => { console.log(input); output.value += input});
+
+    </script>
+  </body>
+</html>
+<!--
+NEED:
+conns = [
+{
+host: ,
+port: ,
+username: ,
+password:
+}
+]
+
+tasks = [
+ "apt update",
+ "apt upgrade"
+]
+
+consumeTasks = false;
+
+output;
+-->

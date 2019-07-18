@@ -1,67 +1,83 @@
-var Client = require('ssh2').Client;
-var child_process = require('child_process');
+const Client = require('ssh2').Client;
+const child_process = require('child_process');
+const http = require('http');
+const url = require('url');
+const { app, BrowserWindow, ipcMain } = require('electron');
+var hostname = '127.0.0.1';
+var port = 3000;
 const debugging = true;
-var time = process.hrtime();
-var conns = [
-  // {
-  //   host: '192.168.0.112',
-  //   port: 22,
-  //   username: 'main',
-  //   password: 'ubuntu-main'
-  // }
-  // },
-  // {
-  //   host: '192.168.0.108',
-  //   port: 22,
-  //   username: 'main',
-  //   password: 'ubuntu-main'
-  // }
-];
-process.argv.forEach((e, i) => {
-  if(i < 2) return;
-  conns.push({
-    host: e,
-    port: 22,
-    username: 'main',
-    password: 'ubuntu-main'
-  });
-});
-const debug = debugging ? console.log : function() {};
-var closed = 0;
-var server = child_process.fork('./public/index.js');
-var tasks = [
-  "rm /var/lib/dpkg/lock",
-  "rm /var/lib/dpkg/lock-frontend",
-  "rm /var/cache/apt/archives/lock",
-  "apt upgrade -y"
-];
 var consumeTasks = false;
-function sendToServer(data){
-  server.send(data);
+const debug = debugging ? send : function() {};
+var conns = [];
+var tasks = [
+  "echo Hi"
+];
+var time;
+var tempTasks;
+function send(output){
+  mainWindow.webContents.send('output', output + "\n");
 }
-server.on('message', (msg) => debug("message from index.js: " + msg));
-sendToServer({ type: "setTasks", data: tasks });
-sendToServer({ type: "setTaskRemovalType", data: consumeTasks })
-for(let i = 0; i < conns.length; i++){
-  let conn = new Client();
-  conn.on('ready', function() {
-    debug('Client :: ready');
-    conn.exec(`echo "${conns[i].password}" | sudo -S node ~/cssh/node/run.js`, function(err, stream) {
-      if (err) throw err;
-      stream.on('close', function(code, signal) {
-        debug('Stream :: close :: code: ' + code + ', signal: ' + signal);
-        //debug(conn);
-        conn.end();
-        if(++closed >= conns.length){
-          time = process.hrtime(time);
-          debug(`Time to execute ${tasks.length} items over ${conns.length} connection${conns.length > 1 ? "s" : ""}: ${time[0]}.${time[1]}s`);
-          server.kill();
-        }
-      }).on('data', function(data) {
-        debug(`STDOUT ${conns[i].host}: \n` + data);
-      }).stderr.on('data', function(data) {
-        debug(`STDERR ${conns[i].host}: \n` + data);
+let mainWindow;
+const server = http.createServer((req, res) => {
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'text/plain');
+  let temp;
+  if(consumeTasks) {
+    //debug(tempTasks.length + " " + tasks.length);
+    temp = tempTasks.shift() || "0";
+  } else {
+    let num = url.parse(req.url, true).query.cycle;
+    temp = num < tasks.length ? tasks[num] : "0";
+    //debug(num);
+  }
+  res.end(temp + "\n");
+  debug(`Connection from ${req.connection.remoteAddress.match(/.*:((?:\d+\.){3}\d+)/)[1]}. Sent: ${temp}`/*.  tasks.length is ${tasks.length} and tempTasks.length is ${tempTasks.length}*/);
+});
+function start(connList, inpTasks, consume) {
+  let closed = 0;
+  consumeTasks = consume;
+  //debug(`inpTasks: "${inpTasks}"`);
+  tasks = inpTasks == "" ? tasks : inpTasks;
+  tempTasks = tasks.slice();
+  conns = connList;
+  server.listen(port);
+  time = process.hrtime();
+  for(let i = 0; i < conns.length; i++){
+    let conn = new Client();
+    conn.on('ready', function() {
+      debug(conns[i].hostname + ' :: ready');
+      conn.exec(`echo "${conns[i].password}" | sudo -S node ~/node_projects/cssh/node/run.js`, function(err, stream) {
+        if (err) throw err;
+        stream.on('close', function(code, signal) {
+          debug('Stream :: close :: ip: ' + conns[i].hostname);
+          //debug(conn);
+          conn.end();
+          if(++closed >= conns.length){
+            let ntime = process.hrtime(time);
+            debug(`Time to execute ${tasks.length} items over ${conns.length} connection${conns.length > 1 ? "s" : ""}: ${ntime[0]}.${ntime[1]}s`);
+            server.close();
+          }
+        }).on('data', function(data) {
+          debug(`STDOUT ${conns[i].hostname}: \n` + data);
+        });
       });
-    });
-  }).connect(conns[i]);
+    }).connect(conns[i]);
+  }
 }
+
+//electron stuff
+ipcMain.on('start', (event, connList, tasks, consumeTasks) => {
+  start(connList, tasks, consumeTasks || false);
+})
+
+function createWindow() {
+  mainWindow = new BrowserWindow({ webPreferences: { nodeIntegration: true }});
+  mainWindow.loadFile('public/index.html');
+
+  mainWindow.on('closed', function() {
+    mainWindow = null;
+  });
+}
+app.on('ready', createWindow);
+app.on('activate', () => mainWindow === null ? createWindow() : null);
+app.on('window-all-closed', () => process.platform !== "darwin" ? app.quit() : null);

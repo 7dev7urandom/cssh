@@ -2,13 +2,14 @@
   "name": "cssh",
   "version": "1.0.0",
   "description": "A js aproach to cluster sshing",
-  "main": "index.js",
+  "main": "node/start.js",
   "dependencies": {
+    "electron": "^5.0.6",
     "ssh2": "^0.8.4"
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "electron ."
   },
   "author": "Micah Henney",
   "license": "ISC"
