@@ -4,7 +4,7 @@
   "description": "A js aproach to cluster sshing",
   "main": "node/start.js",
   "dependencies": {
-    "electron": "^7.2.4",
+    "electron": "^11.5.0",
     "ssh2": "^0.8.4"
   },
   "devDependencies": {},
